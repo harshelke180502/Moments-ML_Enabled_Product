@@ -6,6 +6,16 @@ Demo: http://moments.helloflask.com
 
 ![Screenshot](demo.png)
 
+## ✨ New Features
+
+### 🤖 AI-Powered Alternative Text Generation
+This version includes machine learning capabilities to automatically generate descriptive text for images:
+
+- **Automatic Image Description**: When users upload photos without descriptions, AI generates meaningful alternative text
+- **Enhanced Accessibility**: Improves experience for users with visual impairments
+- **Smart Content Understanding**: Uses state-of-the-art vision-language models to analyze image content
+- **Seamless Integration**: Works automatically in the background during photo uploads
+
 ## Installation
 
 Clone the repo:
@@ -23,6 +33,25 @@ $ pdm install
 
 > [!TIP]
 > If you don't have PDM installed, you can create a virtual environment with `venv` and install dependencies with `pip install -r requirements.txt`.
+
+### 🚀 Setting Up ML Features
+
+The ML features require additional dependencies. Install them with:
+
+```bash
+pip install -r requirements.txt
+```
+
+> [!NOTE]
+> The first time you run the app, it will download pre-trained ML models (~1-2GB). This may take a few minutes depending on your internet connection.
+
+### 🗄️ Database Migration
+
+After installation, run the database migration to add the new ML fields:
+
+```bash
+python migrate_alt_text.py
+```
 
 To initialize the app, run the `flask init-app` command:
 
@@ -46,6 +75,14 @@ Now you can run the app:
 ```
 $ pdm run flask run
 * Running on http://127.0.0.1:5000/
+```
+
+### 🧪 Testing ML Features
+
+To verify that the ML features are working correctly:
+
+```bash
+python test_alt_text.py
 ```
 
 ## License

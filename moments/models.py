@@ -279,12 +279,13 @@ photo_tag = db.Table(
 )
 
 
-@whooshee.register_model('description')
+@whooshee.register_model('description', 'alt_text')
 class Photo(db.Model):
     __tablename__ = 'photo'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     description: Mapped[Optional[str]] = mapped_column(String(500))
+    alt_text: Mapped[Optional[str]] = mapped_column(String(500))  # ML-generated alternative text
     filename: Mapped[str] = mapped_column(String(64))
     filename_s: Mapped[str] = mapped_column(String(64))
     filename_m: Mapped[str] = mapped_column(String(64))
@@ -310,6 +311,10 @@ class Photo(db.Model):
     @property
     def comments_count(self):
         return db.session.scalar(select(func.count(Comment.id)).filter_by(photo_id=self.id))
+
+    def get_effective_description(self):
+        """Return user description if available, otherwise ML-generated alt_text"""
+        return self.description if self.description else self.alt_text
 
     def __repr__(self):
         return f'Photo {self.id}: {self.filename}'

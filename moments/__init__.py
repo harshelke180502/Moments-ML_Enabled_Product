@@ -1,4 +1,5 @@
 from flask import Flask
+import os
 
 from moments.blueprints.admin import admin_bp
 from moments.blueprints.ajax import ajax_bp
@@ -24,6 +25,11 @@ def create_app(config_name):
     login_manager.init_app(app)
     mail.init_app(app)
     dropzone.init_app(app)
+    # Ensure models (and Whooshee model registrations) are loaded
+    from moments import models  # noqa: F401
+
+    # Force a fresh Whooshee index location to pick up new schema (includes 'alt_text')
+    app.config['WHOOSHEE_DIR'] = os.path.join(app.root_path, 'whooshee_v2')
     whooshee.init_app(app)
     avatars.init_app(app)
     csrf.init_app(app)
@@ -39,5 +45,14 @@ def create_app(config_name):
     register_template_handlers(app)
     register_request_handlers(app)
     register_error_handlers(app)
+
+    # Ensure Whooshee index schema is up to date (includes new fields like 'alt_text')
+    # This programmatically rebuilds indexes if schema changed, avoiding manual steps.
+    try:
+        with app.app_context():
+            whooshee.reindex()
+    except Exception:
+        # Do not block app startup if reindex fails; logs will capture details
+        pass
 
     return app

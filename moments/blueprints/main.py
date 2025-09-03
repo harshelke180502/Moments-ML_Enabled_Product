@@ -136,8 +136,28 @@ def upload():
         photo = Photo(
             filename=filename, filename_s=filename_s, filename_m=filename_m, author=current_user._get_current_object()
         )
+        
+        # Generated alternative text using ML service
+        try:
+            from moments.ml_service import get_ml_service
+            ml_service = get_ml_service()
+            if ml_service.is_available():
+                image_path = str(current_app.config['MOMENTS_UPLOAD_PATH'] / filename)
+                alt_text = ml_service.generate_alternative_text(image_path)
+                if alt_text:
+                    photo.alt_text = alt_text
+                    current_app.logger.info(f"Generated alt text for {filename}: {alt_text}")
+                else:
+                    current_app.logger.warning(f"Failed to generate alt text for {filename}")
+            else:
+                current_app.logger.warning("ML service not available for alt text generation")
+        except Exception as e:
+            current_app.logger.error(f"Error generating alternative text: {e}")
+            # Continue with photo upload even if ML fails
+        
         db.session.add(photo)
         db.session.commit()
+        flash('Photo uploaded successfully with AI-powered alternative text!', 'success')
     return render_template('main/upload.html')
 
 
