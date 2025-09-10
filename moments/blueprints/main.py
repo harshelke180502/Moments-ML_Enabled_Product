@@ -29,15 +29,19 @@ def index():
     else:
         pagination = None
         photos = None
-    stmt = (
+    # Show all tags (persist forever), ordered by name for stable navigation
+    tags = db.session.scalars(select(Tag).order_by(Tag.name.asc())).all()
+
+    # Latest AI tag: the tag attached to the most recently created photo
+    latest_tag_stmt = (
         select(Tag)
         .join(Tag.photos)
-        .group_by(Tag.id)
-        .order_by(func.count(Photo.id).desc())
-        .limit(10)
+        .order_by(Photo.created_at.desc())
+        .limit(1)
     )
-    tags = db.session.scalars(stmt).all()
-    return render_template('main/index.html', pagination=pagination, photos=photos, tags=tags)
+    latest_ai_tag = db.session.scalars(latest_tag_stmt).first()
+
+    return render_template('main/index.html', pagination=pagination, photos=photos, tags=tags, latest_ai_tag=latest_ai_tag)
 
 
 @main_bp.route('/explore')
@@ -57,13 +61,28 @@ def search():
     category = request.args.get('category', 'photo')
     page = request.args.get('page', 1, type=int)
     per_page = current_app.config['MOMENTS_SEARCH_RESULT_PER_PAGE']
-    # TODO: add SQLAlchemy 2.x support to Flask-Whooshee then update the following code
+
+    # Fallback SQL-based search that works without Whooshee
+    like_query = f"%{q}%"
     if category == 'user':
-        pagination = User.query.whooshee_search(q).paginate(page=page, per_page=per_page)
+        stmt = select(User).where((User.username.ilike(like_query)) | (User.name.ilike(like_query)))
+        pagination = db.paginate(stmt, page=page, per_page=per_page)
     elif category == 'tag':
-        pagination = Tag.query.whooshee_search(q).paginate(page=page, per_page=per_page)
+        stmt = select(Tag).where(Tag.name.ilike(like_query)).order_by(Tag.name.asc())
+        pagination = db.paginate(stmt, page=page, per_page=per_page)
     else:
-        pagination = Photo.query.whooshee_search(q).paginate(page=page, per_page=per_page)
+        # Search photos by description, alt_text, and detected_objects JSON string
+        stmt = (
+            select(Photo)
+            .where(
+                (Photo.description.ilike(like_query)) |
+                (Photo.alt_text.ilike(like_query)) |
+                (Photo.detected_objects.ilike(like_query))
+            )
+            .order_by(Photo.created_at.desc())
+        )
+        pagination = db.paginate(stmt, page=page, per_page=per_page)
+
     results = pagination.items
     return render_template('main/search.html', q=q, results=results, pagination=pagination, category=category)
 
@@ -160,6 +179,24 @@ def upload():
                 if detected_objects:
                     photo.detected_objects = detected_objects
                     current_app.logger.info(f"Detected objects for {filename}: {detected_objects}")
+                    # Create tags from detected objects
+                    try:
+                        import json
+                        objects = json.loads(detected_objects)
+                        for obj in objects:
+                            name = (obj.get('name') or '').strip()
+                            if not name:
+                                continue
+                            tag = db.session.scalar(select(Tag).filter_by(name=name))
+                            if tag is None:
+                                tag = Tag(name=name)
+                                db.session.add(tag)
+                                db.session.commit()
+                            if tag not in photo.tags:
+                                photo.tags.append(tag)
+                                db.session.commit()
+                    except Exception as tag_err:
+                        current_app.logger.warning(f"Failed to create tags from detected objects: {tag_err}")
                 else:
                     current_app.logger.info(f"No objects detected for {filename}")
             else:
@@ -172,6 +209,7 @@ def upload():
         db.session.add(photo)
         db.session.commit()
         flash('Photo uploaded successfully with AI-powered alternative text and object detection!', 'success')
+        return redirect(url_for('.show_photo', photo_id=photo.id))
     return render_template('main/upload.html')
 
 
@@ -453,10 +491,11 @@ def delete_tag(photo_id, tag_id):
     photo.tags.remove(tag)
     db.session.commit()
 
-    tag_photos = db.session.scalars(tag.photos.select()).all()
-    if not tag_photos:
-        db.session.delete(tag)
-        db.session.commit()
+    # Keep tags even if they have no photos, so they remain searchable in the future.
+    # tag_photos = db.session.scalars(tag.photos.select()).all()
+    # if not tag_photos:
+    #     db.session.delete(tag)
+    #     db.session.commit()
 
-    flash('Tag deleted.', 'info')
+    flash('Tag deleted from photo.', 'info')
     return redirect(url_for('.show_photo', photo_id=photo_id))
