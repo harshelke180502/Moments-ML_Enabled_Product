@@ -102,7 +102,7 @@ class Collection(db.Model):
         return f'Collect: user_id={self.user_id}, photo_id={self.photo_id}'
 
 
-@whooshee.register_model('name', 'username')
+# @whooshee.register_model('name', 'username')  # Temporarily disabled
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
 
@@ -279,13 +279,14 @@ photo_tag = db.Table(
 )
 
 
-@whooshee.register_model('description', 'alt_text')
+# @whooshee.register_model('description', 'alt_text', 'detected_objects')  # Temporarily disabled
 class Photo(db.Model):
     __tablename__ = 'photo'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     description: Mapped[Optional[str]] = mapped_column(String(500))
     alt_text: Mapped[Optional[str]] = mapped_column(String(500))  # ML-generated alternative text
+    detected_objects: Mapped[Optional[str]] = mapped_column(Text)  # JSON string of detected objects for search
     filename: Mapped[str] = mapped_column(String(64))
     filename_s: Mapped[str] = mapped_column(String(64))
     filename_m: Mapped[str] = mapped_column(String(64))
@@ -316,11 +317,21 @@ class Photo(db.Model):
         """Return user description if available, otherwise ML-generated alt_text"""
         return self.description if self.description else self.alt_text
 
+    def get_detected_objects_list(self):
+        """Return detected objects as a list, or empty list if none"""
+        if not self.detected_objects:
+            return []
+        try:
+            import json
+            return json.loads(self.detected_objects)
+        except (json.JSONDecodeError, TypeError):
+            return []
+
     def __repr__(self):
         return f'Photo {self.id}: {self.filename}'
 
 
-@whooshee.register_model('name')
+# @whooshee.register_model('name')  # Temporarily disabled
 class Tag(db.Model):
     __tablename__ = 'tag'
 

@@ -104,5 +104,25 @@
     <a class="text-decoration-none" href="{{ url_for('main.show_collectors', photo_id=photo.id) }}">{{ photo.collectors_count }}
       collectors</a>
     {% endif %}
+    
+    <!-- AI Detected Objects Section -->
+    {% if photo.detected_objects %}
+    <hr>
+    <div id="detected-objects">
+      <h6 class="text-muted mb-2">
+        <i class="bi bi-eye"></i> AI Detected Objects
+      </h6>
+      <div class="d-flex flex-wrap gap-1">
+        {% for obj in photo.get_detected_objects_list() %}
+        <span class="badge text-bg-info rounded-pill" title="Confidence: {{ (obj.confidence * 100)|round(1) }}%">
+          {{ obj.name }}
+        </span>
+        {% endfor %}
+      </div>
+      <small class="text-muted d-block mt-1">
+        <i class="bi bi-robot"></i> Detected by AI
+      </small>
+    </div>
+    {% endif %}
   </div>
 </div>

@@ -598,8 +598,8 @@ torch==2.8.0 \
     --hash=sha256:7b677e17f5a3e69fdef7eb3b9da72622f8d322692930297e4ccb52fefc6c8211
 torchvision==0.23.0 \
     --hash=sha256:1c37e325e09a184b730c3ef51424f383ec5745378dc0eca244520aca29722600
-numpy==2.3.2 \
-    --hash=sha256:dd937f088a2df683cbb79dda9a772b62a3e5a8a7e76690612c2737f38c6ef1b6
+numpy==1.26.4 \
+    --hash=sha256:2a02aba9ed12e4ac4eb3ea9421c420301a0c6460d9830d74a9df87efa4912010
 huggingface-hub==0.34.4 \
     --hash=sha256:9b365d781739c93ff90c359844221beef048403f1bc1f1c123c191257c3c890a
 regex==2025.9.1 \
@@ -626,3 +626,11 @@ networkx==3.5 \
     --hash=sha256:0030d386a9a06dee3565298b4a734b68589749a544acbb6c412dc9e2489ec6ec
 charset_normalizer==3.4.3 \
     --hash=sha256:14c2a87c65b351109f6abfc424cab3927b3bdece6f706e4d12faaf3d52ee5efe
+
+# Object Detection Libraries for Task 2
+matplotlib==3.10.6 \
+    --hash=sha256:59c8ac8382fefb9cb71308dde16a7c487432f5255d8f1fd32473523abecfecdf
+ultralytics==8.3.0 \
+    --hash=sha256:3137c4921c18c8ddf610f64f1badc2dad2a9fd182e10218c2bbb29caee308b9e
+opencv-python==4.10.0.84 \
+    --hash=sha256:fc182f8f4cda51b45f01c64e4cbedfc2f00aff799debebc305d8d0210c43f251

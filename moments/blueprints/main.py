@@ -137,12 +137,14 @@ def upload():
             filename=filename, filename_s=filename_s, filename_m=filename_m, author=current_user._get_current_object()
         )
         
-        # Generated alternative text using ML service
+        # Generate alternative text and detect objects using ML service
         try:
             from moments.ml_service import get_ml_service
             ml_service = get_ml_service()
+            image_path = str(current_app.config['MOMENTS_UPLOAD_PATH'] / filename)
+            
+            # Generate alternative text
             if ml_service.is_available():
-                image_path = str(current_app.config['MOMENTS_UPLOAD_PATH'] / filename)
                 alt_text = ml_service.generate_alternative_text(image_path)
                 if alt_text:
                     photo.alt_text = alt_text
@@ -151,13 +153,25 @@ def upload():
                     current_app.logger.warning(f"Failed to generate alt text for {filename}")
             else:
                 current_app.logger.warning("ML service not available for alt text generation")
+            
+            # Detect objects in the image
+            if ml_service.is_object_detection_available():
+                detected_objects = ml_service.detect_objects(image_path)
+                if detected_objects:
+                    photo.detected_objects = detected_objects
+                    current_app.logger.info(f"Detected objects for {filename}: {detected_objects}")
+                else:
+                    current_app.logger.info(f"No objects detected for {filename}")
+            else:
+                current_app.logger.warning("Object detection not available")
+                
         except Exception as e:
-            current_app.logger.error(f"Error generating alternative text: {e}")
+            current_app.logger.error(f"Error in ML processing: {e}")
             # Continue with photo upload even if ML fails
         
         db.session.add(photo)
         db.session.commit()
-        flash('Photo uploaded successfully with AI-powered alternative text!', 'success')
+        flash('Photo uploaded successfully with AI-powered alternative text and object detection!', 'success')
     return render_template('main/upload.html')
 
 
