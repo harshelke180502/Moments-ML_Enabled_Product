@@ -630,7 +630,10 @@ charset_normalizer==3.4.3 \
 # Object Detection Libraries for Task 2
 matplotlib==3.10.6 \
     --hash=sha256:59c8ac8382fefb9cb71308dde16a7c487432f5255d8f1fd32473523abecfecdf
-ultralytics==8.3.0 \
-    --hash=sha256:3137c4921c18c8ddf610f64f1badc2dad2a9fd182e10218c2bbb29caee308b9e
-opencv-python==4.10.0.84 \
+# Azure Computer Vision SDK
+azure-cognitiveservices-vision-computervision==0.9.0 \
+    --hash=sha256:a36b4725b9a159311a34864399d10c9daae295df52e029e806aeddef350ddb5a
+msrest==0.7.1 \
     --hash=sha256:fc182f8f4cda51b45f01c64e4cbedfc2f00aff799debebc305d8d0210c43f251
+python-dotenv==1.0.0 \
+    --hash=sha256:59c8ac8382fefb9cb71308dde16a7c487432f5255d8f1fd32473523abecfecdf
